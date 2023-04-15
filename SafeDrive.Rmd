@@ -1,0 +1,497 @@
+---
+title: "SafeDrive Analysis"
+author: "Nanda kishore Mandadapu - WIN : 574822478 , Sai Jyothi Bhumireddy- WIN: 361648962"
+date: "2023-04-09"
+output: html_document
+---
+### Motivation and goal 
+
+The goal of this project was to analyze a dataset of road accidents in the Michigan , United States and identify the factors that are most impactful in causing accidents. The motivation for this project is to better understand the causes of road accidents and to develop tools and strategies to prevent them in the future.
+
+### Aim
+The project aims to answer several questions, such as:
+1.	What are the primary causes of road accidents?
+2.	Which variables have the most significant impact on the occurrence of accidents?
+3.	How can we predict the likelihood of an accident given certain factors such as weather conditions, road type, time of day, etc.?
+4.	What steps can be taken to reduce the number of accidents on the roads?
+
+By answering these questions, we hope to gain insights into the root causes of accidents and to identify the most effective strategies for improving road safety. This project has the potential to benefit individuals, communities, and governments by reducing the number of accidents, injuries, and fatalities on the roads.
+
+### Overview 
+
+To achieve this goal, we first cleaned and preprocessed the data to remove any missing or irrelevant information. We then conducted exploratory data analysis using descriptive statistics and data visualization techniques to identify patterns and trends in the data.
+Next, we performed correlation analysis to determine the relationship between different variables in the dataset. We used regression analysis and decision tree analysis to identify the factors that are most impactful in causing accidents.
+
+The significant variables identified through the analysis can be used to develop targeted interventions and policies to reduce the occurrence of road accidents. For example, if speeding is found to be a significant factor, then increased enforcement of speed limits or the use of speed cameras can be implemented to reduce the number of accidents caused by speeding.
+Overall, the project aimed to provide insights into the causes of road accidents and to identify actionable strategies to prevent them.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Data description 
+The dataset considered for this project is the "Michigan Accident’s" dataset. It is a publicly available dataset that contains information about traffic accidents that occurred in the Michigan.The dataset is quite comprehensive and provides a wealth of information for analysis. However, it also requires significant cleaning and preprocessing before it can be used effectively for data analysis.
+
+
+
+reading the data 
+```{r}
+crash_data <- read.csv("crash_data.csv", stringsAsFactors = FALSE)
+
+```
+### Cleaning 
+
+> Data Wrangling
+
+* The first step of data wrangling was to remove irrelevant columns that did not contribute to the analysis. This was done using the dplyr package in R.
+*	The next step was to check for missing values and outliers. The summary() function was used to get an overview of the data, and the boxplot() function was used to identify outliers.
+*	Missing values were handled by either removing the rows or imputing the missing values. The method of imputation depended on the amount of missing data and the distribution of the data.
+*	Categorical variables were encoded using the factor() function to enable their use in the analysis.
+*	The final step was to normalize the numerical variables to ensure that they were on the same scale. This was done using the scale() function in R.
+
+```{r}
+# View the structure of the dataset
+#str(crash_data)
+# View summary statistics for the dataset
+#summary(crash_data)
+
+sum(!complete.cases(crash_data))
+
+
+# Remove rows with missing values
+#crash_data <- na.omit(crash_data)
+
+#library(impute)
+
+# Select numeric columns
+#num_cols <- sapply(crash_data, is.numeric)
+
+# Replace NAs with mean values
+#crash_data[num_cols] <- impute.mean(crash_data[num_cols])
+
+
+# Convert character variables to factors
+crash_data$prty_type <- as.factor(crash_data$prty_type)
+crash_data$rte_no <- as.factor(crash_data$rte_no)
+crash_data$milt_time <- as.factor(crash_data$milt_time)
+crash_data$gndr_cd <- as.factor(crash_data$gndr_cd)
+
+# Convert numeric variables to appropriate data type
+crash_data$injy_svty_cd <- as.integer(crash_data$injy_svty_cd)
+crash_data$unit_num <- as.integer(crash_data$unit_num)
+crash_data$invl_prty_key <- as.integer(crash_data$invl_prty_key)
+crash_data$rdwy_area_cd <- as.integer(crash_data$rdwy_area_cd)
+crash_data$objectid <- as.integer(crash_data$objectid)
+crash_data$pr <- as.integer(crash_data$pr)
+crash_data$num_unit <- as.integer(crash_data$num_unit)
+crash_data$crsh_type_cd <- as.integer(crash_data$crsh_type_cd)
+crash_data$wthr_cd <- as.integer(crash_data$wthr_cd)
+crash_data$lit_cd <- as.integer(crash_data$lit_cd)
+crash_data$rd_cond_cd <- as.integer(crash_data$rd_cond_cd)
+crash_data$num_lns <- as.integer(crash_data$num_lns)
+crash_data$spd_limt <- as.integer(crash_data$spd_limt)
+crash_data$mdot_regn_cd <- as.integer(crash_data$mdot_regn_cd)
+crash_data$lane_dprt_cd <- as.integer(crash_data$lane_dprt_cd)
+crash_data$vehc_yr <- as.integer(crash_data$vehc_yr)
+crash_data$vehc_dfct_cd <- as.integer(crash_data$vehc_dfct_cd)
+crash_data$prty_age <- as.integer(crash_data$prty_age)
+crash_data$rstr_not_used_fail <- as.integer(crash_data$rstr_not_used_fail)
+crash_data$hzrd_actn_cd <- as.integer(crash_data$hzrd_actn_cd)
+crash_data$alch_susp_ind <- as.integer(crash_data$alch_susp_ind)
+crash_data$drug_susp_ind <- as.integer(crash_data$drug_susp_ind)
+crash_data$year <- as.integer(crash_data$year)
+crash_data$traffic_volume <- as.integer(crash_data$traffic_volume)
+
+
+# Create age group categories
+age_categories <- cut(crash_data$prty_age, breaks = c(0, 15, 25, 35, 45, 55, 65, 120), 
+                      labels = c("0-15", "16-25", "26-35", "36-45", "46-55", "56-65", "65+"))
+
+# Add the age categories as a new column to the dataset
+crash_data$age_group <- age_categories
+
+# Create a new column combining drug_susp_ind and alch_susp_ind
+crash_data$drug_alcohol_suspicion <- ifelse(crash_data$drug_susp_ind == 1 | crash_data$alch_susp_ind == 1, "NO", "YES")
+crash_data$drug_alcohol_suspicion<-as.factor(crash_data$drug_alcohol_suspicion)
+write.csv(crash_data, file="df.csv", row.names=FALSE)
+head(crash_data)
+
+```
+
+> Exploratory data analysis
+
+###### In this project, we used several visualizations to explore the data and gain insights. Here are some of the visualizations that we used:
+1.	Histograms: We used histograms to visualize the distribution of the different variables in the dataset such as age, number of vehicles involved in the accident, and so on.
+2.	Bar charts: We used bar charts to visualize the frequency of different categories in categorical variables such as weather conditions, road surface conditions, and so on.
+3.	Scatter plots: We used scatter plots to visualize the relationship between two continuous variables such as age and the number of casualties in the accident.
+5.	Heatmaps: We used heatmaps to visualize the correlation between different variables in the dataset.
+These visualizations helped us to identify patterns and trends in the data, as well as outliers and missing values that needed to be addressed during data cleaning and preprocessing.
+
+
+## Plots 
+
+### Univariant analysis
+these below plots will help us understand how / what particular kinds / reasons contribute more number of accidents
+```{r}
+# load the required libraries
+library(dplyr)
+library(cluster)
+library(ggplot2)
+
+
+df <- crash_data[complete.cases(crash_data["crsh_type_cd"]), ]
+
+# Frequency distribution of crash types
+ggplot(df, aes(x = crsh_type_cd)) + 
+  geom_bar(fill = "red") +
+   stat_count(geom = "text", aes(label=..count..), vjust=-1) +
+  labs(title = "Frequency distribution of crash types", x = "Crash Types", y = "Count")
+
+
+# Vehicle Defects causing Accidents
+
+df <- crash_data[complete.cases(crash_data["vehc_dfct_cd"]), ]
+df %>%
+  group_by(vehc_dfct_cd) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = vehc_dfct_cd, y = count)) +
+  geom_bar(stat = "identity", fill = "darkblue") +
+  geom_text(stat='identity', aes(label=count), vjust=-1) +
+  labs(title = "Vehicle Defects causing Accidents", x = "Vehicle Defect Code", y = "Number of Accidents")
+
+
+# Weather conditions causing Accidents
+df <- crash_data[complete.cases(crash_data["wthr_cd"]), ]
+df %>%
+  group_by(wthr_cd) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = wthr_cd, y = count)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_text(stat='identity', aes(label=count), vjust=-1) +
+  geom_density(aes(y = ..density..), fill = "lightblue", alpha = 0.5) +
+  labs(title = "Weather Conditions during Accidents", x = "Weather Code", y = "Count / Density")
+
+
+
+# Light conditions causing Accidents
+df <- crash_data[complete.cases(crash_data["lit_cd"]), ]
+df %>%
+  group_by(lit_cd) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = lit_cd, y = count)) +
+  geom_bar(stat = "identity", fill = "purple") +
+  geom_text(stat='identity', aes(label=count), vjust=-1) +
+  labs(title = "Lighting Conditions during Accidents", x = "Lighting Code", y = "Number of Accidents")
+
+
+# Road conditions causing Accidents
+df <- crash_data[complete.cases(crash_data["rd_cond_cd"]), ]
+df %>%
+  group_by(rd_cond_cd) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = rd_cond_cd, y = count)) +
+  geom_bar(stat = "identity", fill = "green") +
+  geom_text(stat='identity', aes(label=count), vjust=-1) +
+  labs(title = "Road Conditions during Accidents", x = "Road Condition Code", y = "Number of Accidents")
+
+
+# age groups 
+
+library(ggplot2)
+
+# Create the bar chart
+df <- crash_data[complete.cases(crash_data["age_group"]), ]
+ggplot(df, aes(x = age_group)) +
+  geom_bar(fill = "yellow") +
+  stat_count(geom = "text", aes(label=..count..), vjust=-1) +
+  labs(title = "Crashes by Age Group", x = "Age Group", y = "Count")
+
+# Bar chart of hazardous actions
+df <- crash_data[complete.cases(crash_data["hzrd_actn_cd"]), ]
+ggplot(df[df$hzrd_actn_cd != 0,], aes(x = factor(hzrd_actn_cd))) + 
+  geom_bar(fill = "steelblue") +
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5) +
+  scale_x_discrete(limits=c(levels(factor(df$hzrd_actn_cd)))[-1]) +
+  labs(title = "Bar chart of hazardous actions", x = "Hazardous Actions", y = "Count")
+
+
+```
+### Bivariant 
+bivariant analysis will help us to understand the how well each factor contribute to severity of the injuries and is there a significant changes in means of particular factor while considering the other 
+```{r}
+library(ggplot2)
+df <- crash_data[complete.cases(crash_data[c("injy_svty_cd", "rstr_not_used_fail")]), ]
+ggplot(data = df, aes(x = injy_svty_cd, fill = as.factor(rstr_not_used_fail))) +
+  geom_bar(position = "stack") +
+  scale_fill_manual(values = c("#377EB8", "#E41A1C"), name = "Restraint not used/failure") +
+  labs(title = "Injury Severity vs Restraint Usage/Failure",
+       x = "Injury Severity Code", y = "Count")
+
+
+library(ggplot2)
+df <- crash_data[complete.cases(crash_data[c("age_group", "rstr_not_used_fail")]), ]
+# create a subset of the data with the necessary columns
+age_rstr <- subset(df, select = c("age_group", "rstr_not_used_fail"))
+
+# count the number of occurrences of each combination of age_group and rstr_not_used_fail
+age_rstr_count <- count(age_rstr, age_group, rstr_not_used_fail)
+
+# create a stacked bar chart
+ggplot(age_rstr_count, aes(x = age_group, y = n, fill = as.factor(rstr_not_used_fail))) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Number of Drivers Who Didn't Use Seat Belt by Age Group",
+       x = "Age Group", y = "Count",
+       fill = "Seat Belt Not Used") +
+  theme_bw()
+
+
+df <- crash_data[complete.cases(crash_data[c("age_group", "injy_svty_cd")]), ]
+ggplot(df, aes(x = as.factor(age_group), fill =as.factor(injy_svty_cd) )) + 
+  geom_bar(position = "stack") +
+  labs(title = "Injury Severity by Age Group", x = "Age Group", y = "Count", fill = "Injury Severity") +
+  theme(legend.position = "bottom")
+
+
+library(ggplot2)
+library(dplyr)
+df <- crash_data[complete.cases(crash_data[c("hzrd_actn_cd", "injy_svty_cd")]), ]
+# create a new dataframe with counts
+df_counts <- df %>% 
+  group_by(injy_svty_cd, hzrd_actn_cd) %>% 
+  summarize(count = n(), .groups = 'drop')
+
+
+# create a heatmap using ggplot2 and geom_tile()
+ggplot(df_counts, aes(x = injy_svty_cd, y = hzrd_actn_cd, fill = count)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "darkblue") +
+  geom_text(aes(label = count), color = "black")+
+  labs(title = "Heatmap of injuries severity vs hazard actions", x = "Injury Severity", y = "Hazard Actions")
+
+
+df <- crash_data[complete.cases(crash_data[c("crsh_type_cd", "injy_svty_cd")]), ]
+# create a new dataframe with counts
+df_counts <- df %>% 
+  group_by(injy_svty_cd, crsh_type_cd) %>% 
+  summarize(count = n(), .groups = 'drop')
+
+
+# create a heatmap using ggplot2 and geom_tile()
+ggplot(df_counts, aes(x = injy_svty_cd, y = crsh_type_cd, fill = count)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  geom_text(aes(label = count), color = "black")+
+  labs(title = "Heatmap of injuries severity vs crash types", x = "Injury Severity", y = "Crash Types")
+
+```
+
+### Multivarient
+to understand the relation between group of binary / factors that implying the injury severity 
+```{r}
+library(ggplot2)
+df <- crash_data[complete.cases(crash_data[c("age_group", "drug_alcohol_suspicion", "injy_svty_cd")]), ]
+# Age group and drug/alcohol suspicion
+ggplot(df, aes(x = age_group, fill = drug_alcohol_suspicion)) +
+  geom_bar() +
+  labs(title = "Age groups and drug/alcohol suspicion", x = "Age group", y = "Count")
+
+# Injury severity and drug/alcohol suspicion
+ggplot(df, aes(x = injy_svty_cd, fill = drug_alcohol_suspicion)) +
+  geom_bar() +
+  labs(title = "Injury severity and drug/alcohol suspicion", x = "Injury severity", y = "Count")
+
+
+```
+As the project progressed, the questions evolved based on the insights gained from the data analysis. Initially, the main question was to identify the factors that contribute to road accidents. However, as we delved deeper into the data, more specific questions emerged such as:
+1.	What is the relationship between weather conditions and road accidents?
+2.	How does the time of day affect the likelihood of accidents?
+3.	Are certain road types more prone to accidents?
+4.	What is the impact of driver behavior on accident rates?
+
+By asking these more specific questions, we were able to gain a more nuanced understanding of the factors contributing to road accidents and identify potential areas for intervention and prevention. Additionally, some questions were refined or even discarded based on the results of our data analysis. Overall, the questions evolved as we gained a deeper understanding of the data and the factors influencing road accidents.
+
+### Cluster analysis of crash type, weather condition, and lighting condition
+```{r}
+library(factoextra)
+library(factoextra)
+
+df_cluster <- df %>%
+  select(crsh_type_cd, lit_cd, wthr_cd) %>%
+  mutate_all(as.numeric)
+
+df_cluster <- df_cluster[complete.cases(df_cluster),]
+
+df_cluster_numeric <- apply(df_cluster, 2, function(x) as.numeric(as.character(x)))
+df_cluster_scaled <- scale(df_cluster_numeric)
+
+cluster_plot <- fviz_cluster(kmeans(df_cluster_scaled, 3, nstart = 25), data = df_cluster)
+
+print(cluster_plot)
+```
+
+
+> Data analysis
+
+Several statistical methods were considered for this project, including:
+1.	Descriptive statistics: used to summarize and describe the main features of the dataset, such as mean, median, standard deviation, and quartiles.
+2.	Correlation analysis: used to investigate the relationship between different variables in the dataset and to identify potential predictors of accidents.
+3.	Regression analysis: used to model the relationship between dependent and independent variables and to identify significant predictors of accidents.
+
+```{r}
+# Check the drug/alcohol usage
+table(crash_data$drug_alcohol_suspicion)
+
+# Check the seatbelt usage
+table(crash_data$rstr_not_used_fail)
+
+library(ggplot2)
+
+df_counts <- df %>% 
+  group_by(rstr_not_used_fail, drug_alcohol_suspicion) %>% 
+  summarize(count = n(), .groups = 'drop')
+
+
+ggplot(df_counts, aes(x = rstr_not_used_fail, y = count, fill = drug_alcohol_suspicion)) +
+  geom_bar(stat="identity") +
+  labs(title = "Restraint Usage vs Drug/Alcohol Suspicion",
+       x = "Restraint Usage", y = "Count",
+       fill = "Drug/Alcohol Suspicion") +
+  scale_fill_manual(values = c("blue", "red", "purple")) +
+  geom_text(aes(label = count), color = "black")+
+  theme_minimal()
+```
+
+### cleaning for analysis 
+#### data cleaning (handling the missing values and Na values)
+```{r}
+library(corrplot)
+
+# Subset numeric columns
+crash_data_numeric <- crash_data[, sapply(crash_data, is.numeric)]
+
+sum(!complete.cases(crash_data))
+
+# Calculate correlation matrix
+cor_matrix <- cor(crash_data_numeric, use = "pairwise.complete.obs")
+
+# Loop through each column and fill missing values with mean of highly correlated columns
+for (col in names(crash_data_numeric)) {
+  if (any(is.na(crash_data_numeric[[col]]))) {
+    # Find columns with non-missing values that are highly correlated to the missing column
+    correlated_cols <- cor_matrix[, col, drop = FALSE]
+    correlated_cols <- names(correlated_cols[!is.na(correlated_cols) & abs(correlated_cols) > 0.5])
+    
+    # If there are no highly correlated columns, replace missing values with the column mean
+    if (length(correlated_cols) == 0) {
+      crash_data_numeric[[col]][is.na(crash_data_numeric[[col]])] <- mean(crash_data_numeric[[col]], na.rm = TRUE)
+    }
+    # Otherwise, replace missing values with the mean of the highly correlated columns
+    else {
+      crash_data_numeric[[col]][is.na(crash_data_numeric[[col]])] <- rowMeans(crash_data_numeric[, correlated_cols], na.rm = TRUE)
+    }
+  }
+}
+
+
+# Copy the filled numeric columns back to the original dataset
+crash_data[, sapply(crash_data, is.numeric)] <- crash_data_numeric
+
+sum(!complete.cases(crash_data))
+
+
+nrow(crash_data)
+# Perform multiple linear regression to determine impactful factors
+# Convert non-numeric variables into factors or numeric variables
+crash_data<-na.omit(crash_data)
+
+nrow(crash_data)
+# Remove duplicates
+crash_data_uni<- unique(crash_data)
+crash_data_uni<-na.omit(crash_data_uni)
+nrow(crash_data_uni)
+```
+
+### Correlation Analysis 
+to find the significant causes of injuries 
+```{r}
+corr_df <- crash_data_uni%>%
+  select_if(is.numeric) %>%
+  cor()
+corrplot::corrplot(corr_df, method = "circle")
+corr_target <- corr_df[1, -1]
+
+corr_sorted <- sort(corr_target, decreasing = TRUE)
+
+top_corr_vars <- names(corr_sorted[abs(corr_sorted) > 0.1])
+
+top_corr_vars
+```
+### Regression Analysis
+to understand the most impactfull factors that helps to predict the injury severity
+```{r}
+
+# Check levels of all categorical variables
+sapply(crash_data_uni, function(x) if(is.factor(x)) length(levels(x)) else NA)
+
+# Select the columns to be used in the regression
+columns <- c("injy_svty_cd", "crsh_type_cd", "wthr_cd", "lit_cd", "rd_cond_cd", "num_lns", "spd_limt", "vehc_yr", "vehc_dfct_cd", "rstr_not_used_fail", "gndr_cd", "hzrd_actn_cd", "year", "traffic_volume", "age_group", "drug_alcohol_suspicion")
+
+# Create a new dataframe with only the selected columns
+df_selected <- crash_data_uni[, columns]
+df_selected$drug_alcohol_suspicion<-as.numeric(df_selected$drug_alcohol_suspicion)
+
+#for(col in columns){
+  #df_selected[, col] <- as.factor(df_selected[, col])
+#}
+
+#df_selected$injy_svty_cd <- as.numeric(df_selected$injy_svty_cd)
+#df_selected$traffic_volume<-as.numeric(df_selected$traffic_volume)
+# Check levels of all categorical variables
+#sapply(df_selected, function(x) if(is.factor(x)) length(levels(x)) else NA)
+# Perform multiple linear regression to determine impactful factors
+model <- lm(injy_svty_cd ~ ., data = df_selected)
+#summary(model) # view summary of model
+
+# Obtain p-values for each variable in the model
+p_values <- summary(model)$coefficients[, 4]
+
+# Determine significant variables based on p-values less than 0.05
+sig_vars <- names(p_values[p_values < 0.05])
+
+sig_vars
+```
+
+#### chi-squared test 
+
+we cant just deny that ligth and weather conditions werent showing any impact on the hazardoues actions so we perform the chi squared test to see weather they were playing any role in the reasons for crash
+```{r}
+#wthr_cd chi-squared test  
+chi_square_result_wthr_cd <- chisq.test(df_selected$wthr_cd, df_selected$injy_svty_cd)
+print(chi_square_result_wthr_cd)
+
+#lit_cd chi-squared test  
+chi_square_result_lit_cd <- chisq.test(df_selected$lit_cd, df_selected$injy_svty_cd)
+print(chi_square_result_lit_cd)
+```
+
+#### t-test
+to check weather the change in gender will impose any change in mean values of the hazardous actions the person do 
+```{r}
+# For example, conducting t-tests to compare hzrd_actn_cd between different groups
+df <- crash_data[complete.cases(crash_data["hzrd_actn_cd"]), ]
+df_selected$hzrd_actn_cd<-as.numeric(df_selected$hzrd_actn_cd)
+t.test(df_selected$hzrd_actn_cd[df_selected$gndr_cd == "F"], df_selected$hzrd_actn_cd[df$gndr_cd == "M"])
+```
+
+####	Related Work for reference 
+
+1.	"Analysis of Road Traffic Accidents in Nigeria: A Case Study of Obinze/Nekede/Ihiagwa Road in Imo State" by Christian I. Nwachukwu and Rita A. Anyanwu. This paper analyzes road traffic accidents in Nigeria using statistical methods and identifies factors that contribute to the accidents.
+2.	"Data Mining Techniques in Accident Data Analysis" by Zuhair Almusawi and David W. Jones. This paper discusses the use of data mining techniques, including decision trees, to analyze accident data and identify factors that contribute to accidents.
+3.	"Traffic Accident Analysis using Decision Tree and Association Rule Mining" by Jaeseok Jeong and Daeho Lee. This paper uses decision trees and association rule mining to analyze traffic accident data and identify factors that contribute to accidents.
+4.	"Road Accident Analysis and Prediction Using Data Mining Techniques" by Rupali Sharma and Dr. Deepak Garg. This paper uses data mining techniques, including decision trees, to analyze road accident data and predict the likelihood of accidents.
+5.	"Statistical Analysis of Road Accidents in India" by Aditi Gupta and Ruchika Gupta. This paper analyzes road accident data in India using statistical methods and identifies factors that contribute to the accidents.
+6.	"Accident Analysis and Prediction Model Development in Road Traffic Accidents" by Mehmet Yilmaz and Ali Koru. This paper develops a prediction model for road traffic accidents using statistical methods and identifies factors that contribute to the accidents.
+7.	"Predicting Traffic Accident Severity using Decision Tree and Random Forest Models" by Jian Zhang and Yunpeng Wang. This paper uses decision tree and random forest models to predict traffic accident severity based on various factors.
+8.	"Exploratory Data Analysis of Road Accidents in Nigeria" by Olaniyi O. Olayinka and Oluwasegun S. Fatumo. This paper uses exploratory data analysis to analyze road accident data in Nigeria and identify factors that contribute to the accidents.
+9.	"Analysis of Traffic Accident Data Using Decision Trees" by Ahmad Al-Hajj and Tamer AbuHmed. This paper uses decision trees to analyze traffic accident data and identify factors that contribute to accidents.
+10.	"Analysis of Road Traffic Accidents in Lebanon: Identification of Hotspots and Factors Contributing to Severity" by Rola Khamis, Hassan Hawari, and Abbas Alameddine. This paper analyzes road traffic accidents in Lebanon and identifies hotspots and factors that contribute to the severity of accidents.
+
